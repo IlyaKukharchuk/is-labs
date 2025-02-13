@@ -28,13 +28,25 @@ import matplotlib.pyplot as plt  # Для визуализации данных 
 # Определим возможные действия игроков
 ACTIONS = ['Олень', 'Заяц']  # Два возможных действия, которые могут выбрать игроки
 
-# Определим матрицу выигрышей
-PAYOFF_MATRIX = {
-    ('Олень', 'Олень'): (4, 4),  # Если оба выбирают "Олень", оба получают 4 очка
-    ('Олень', 'Заяц'): (0, 3),   # Если игрок 1 выбирает "Олень", а игрок 2 — "Заяц", то игрок 1 получает 0, а игрок 2 — 3
-    ('Заяц', 'Олень'): (3, 0),   # Если игрок 1 выбирает "Заяц", а игрок 2 — "Олень", то игрок 1 получает 3, а игрок 2 — 0
-    ('Заяц', 'Заяц'): (3, 3),    # Если оба выбирают "Заяц", оба получают 3 очка
-}
+# Функция загрузки матрицы выигрышей
+def read_payoff_matrix(file_path):
+    payoff_matrix = {}
+    with open(file_path, 'r', encoding='utf-8') as file:
+        for line in file:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                key_part, value_part = line.split(':')
+                actions = tuple(key_part.split(','))
+                values = tuple(map(int, value_part.split(',')))
+                payoff_matrix[actions] = values
+            except (ValueError, IndexError) as e:
+                print(f"Ошибка в строке '{line}': {e}")
+    return payoff_matrix
+
+# Загрузка матрицы
+PAYOFF_MATRIX = read_payoff_matrix('payoff_matrix.txt')
 
 # Стратегия игрока 1: случайный выбор
 def player1_strategy():
@@ -48,7 +60,7 @@ class Player2Net(nn.Module):
         self.fc2 = nn.Linear(10, 2)  # Второй полносвязный слой: входной размер 10, выходной размер 2
 
     def forward(self, x):
-        x = torch.relu(self.fc1(x))  # Применяем функцию активации ReLU к выходу первого слоя
+        x = torch.relu(self.fc1(x))  # Применяем функцию активации ReLU к выходу первого слоя  если результат меньше нуля, то он становится нулём. Формула: ReLU(x) = max(0, x).
         x = self.fc2(x)  # Пропускаем данные через второй слой
         return x  # Возвращаем выход нейронной сети
 
