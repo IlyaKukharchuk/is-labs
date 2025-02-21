@@ -13,6 +13,7 @@ part_of(sensors, car).
 part_of(fuel_system, engine).  
 part_of(cooling_system, engine).  
 
+
 % Functional Dependency (Функциональная зависимость)
 depends_on(engine, fuel_system).
 depends_on(engine, cooling_system).
