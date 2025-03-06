@@ -26,7 +26,33 @@ model = Sequential([
 model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
 # Обучение модели
-model.fit(x_train, y_train, epochs=10, batch_size=32, validation_split=0.2)
+history = model.fit(x_train, y_train, epochs=10, batch_size=32, validation_split=0.2)
+
+# Визуализация метрик
+def plot_metrics(history):
+    # Точность (accuracy)
+    plt.figure(figsize=(12, 5))
+    plt.subplot(1, 2, 1)
+    plt.plot(history.history['accuracy'], label='Точность на обучении')
+    plt.plot(history.history['val_accuracy'], label='Точность на валидации')
+    plt.title('Точность модели')
+    plt.xlabel('Эпохи')
+    plt.ylabel('Точность')
+    plt.legend()
+
+    # Потери (loss)
+    plt.subplot(1, 2, 2)
+    plt.plot(history.history['loss'], label='Потери на обучении')
+    plt.plot(history.history['val_loss'], label='Потери на валидации')
+    plt.title('Потери модели')
+    plt.xlabel('Эпохи')
+    plt.ylabel('Потери')
+    plt.legend()
+
+    plt.show()
+
+# Вызов функции для визуализации
+plot_metrics(history)
 
 # Функция для загрузки и подготовки изображения
 def prepare_image(img_path):

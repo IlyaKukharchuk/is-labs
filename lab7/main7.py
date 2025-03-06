@@ -87,65 +87,65 @@ y_test_enc = le.transform(y_test)
 results = {}
 
 # 6.1 BoW + Logistic Regression
-vectorizer = TfidfVectorizer(max_features=1000)
-X_train_bow = vectorizer.fit_transform(X_train_clean)
-X_test_bow = vectorizer.transform(X_test_clean)
+vectorizer = TfidfVectorizer(max_features=1000)  # Создаём TF-IDF векторизатор (максимум 1000 слов)
+X_train_bow = vectorizer.fit_transform(X_train_clean)  # Преобразуем обучающие тексты в числовой формат
+X_test_bow = vectorizer.transform(X_test_clean)  # Преобразуем тестовые тексты в числовой формат
 
-model_bow = LogisticRegression(max_iter=1000)
-model_bow.fit(X_train_bow, y_train)
-results["BoW"] = accuracy_score(y_test, model_bow.predict(X_test_bow))
+model_bow = LogisticRegression(max_iter=1000)  # Создаём модель логистической регрессии
+model_bow.fit(X_train_bow, y_train)  # Обучаем модель на обучающих данных
+results["BoW"] = accuracy_score(y_test, model_bow.predict(X_test_bow))  # Оцениваем точность на тестовых данных
 
 # 6.2 Word Embeddings
-tokenizer = Tokenizer(num_words=10000)
-tokenizer.fit_on_texts(X_train_clean)
+tokenizer = Tokenizer(num_words=10000)  # Создаём токенизатор (максимум 10 000 слов)
+tokenizer.fit_on_texts(X_train_clean)  # Обучаем токенизатор на обучающих текстах
 
-X_train_seq = tokenizer.texts_to_sequences(X_train_clean)
-X_test_seq = tokenizer.texts_to_sequences(X_test_clean)
+X_train_seq = tokenizer.texts_to_sequences(X_train_clean)  # Преобразуем тексты в последовательности чисел
+X_test_seq = tokenizer.texts_to_sequences(X_test_clean)  # Преобразуем тестовые тексты в последовательности чисел
 
-max_len = 100
-X_train_pad = pad_sequences(X_train_seq, maxlen=max_len)
-X_test_pad = pad_sequences(X_test_seq, maxlen=max_len)
+max_len = 100  # Максимальная длина последовательности
+X_train_pad = pad_sequences(X_train_seq, maxlen=max_len)  # Дополняем последовательности до длины 100
+X_test_pad = pad_sequences(X_test_seq, maxlen=max_len)  # Дополняем тестовые последовательности до длины 100
 
-le = LabelEncoder()
-y_train_enc = le.fit_transform(y_train)
-y_test_enc = le.transform(y_test)
+le = LabelEncoder()  # Создаём кодировщик меток
+y_train_enc = le.fit_transform(y_train)  # Кодируем обучающие метки
+y_test_enc = le.transform(y_test)  # Кодируем тестовые метки
 
 # 6.3 LSTM
 model_lstm = Sequential([
-    Embedding(10000, 128, input_length=max_len),
-    LSTM(128),
-    Dense(len(data["label"].unique()), activation="softmax")
+    Embedding(10000, 128, input_length=max_len),  # Слой для преобразования слов в векторы
+    LSTM(128),  # Рекуррентный слой LSTM
+    Dense(len(data["label"].unique()), activation="softmax")  # Выходной слой для классификации
 ])
-model_lstm.compile(optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
-model_lstm.fit(X_train_pad, y_train_enc, epochs=5, validation_data=(X_test_pad, y_test_enc), verbose=0)
-results["LSTM"] = model_lstm.evaluate(X_test_pad, y_test_enc)[1]
+model_lstm.compile(optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"])  # Компиляция модели
+model_lstm.fit(X_train_pad, y_train_enc, epochs=5, validation_data=(X_test_pad, y_test_enc), verbose=0)  # Обучение модели
+results["LSTM"] = model_lstm.evaluate(X_test_pad, y_test_enc)[1]  # Оценка точности на тестовых данных
 
-# 6.4 Conv1D
+# 6.4 Conv1D (1D Convolutional Neural Network) Свёрточная нейронная сеть
 model_conv = Sequential([
-    Embedding(10000, 128, input_length=max_len),
-    Conv1D(128, 5, activation="relu"),
-    GlobalMaxPooling1D(),
-    Dense(len(data["label"].unique()), activation="softmax")
+    Embedding(10000, 128, input_length=max_len),  # Слой для преобразования слов в векторы
+    Conv1D(128, 5, activation="relu"),  # Свёрточный слой
+    GlobalMaxPooling1D(),  # Слой для извлечения наиболее важных признаков
+    Dense(len(data["label"].unique()), activation="softmax")  # Выходной слой для классификации
 ])
-model_conv.compile(optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
-model_conv.fit(X_train_pad, y_train_enc, epochs=5, validation_data=(X_test_pad, y_test_enc), verbose=0)
-results["Conv1D"] = model_conv.evaluate(X_test_pad, y_test_enc)[1]
+model_conv.compile(optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"])  # Компиляция модели
+model_conv.fit(X_train_pad, y_train_enc, epochs=5, validation_data=(X_test_pad, y_test_enc), verbose=0)  # Обучение модели
+results["Conv1D"] = model_conv.evaluate(X_test_pad, y_test_enc)[1]  # Оценка точности на тестовых данных
 
 # 6.5 Word2Vec
-sentences = [text.split() for text in X_train_clean]
-model_w2v = Word2Vec(sentences, vector_size=100, window=5, min_count=1, workers=4)
+sentences = [text.split() for text in X_train_clean]  # Разбиваем тексты на слова
+model_w2v = Word2Vec(sentences, vector_size=100, window=5, min_count=1, workers=4)  # Обучаем Word2Vec
 
 def text_to_vector(text):
-    words = text.split()
-    vectors = [model_w2v.wv[word] for word in words if word in model_w2v.wv]
-    return np.mean(vectors, axis=0) if vectors else np.zeros(100)
+    words = text.split()  # Разбиваем текст на слова
+    vectors = [model_w2v.wv[word] for word in words if word in model_w2v.wv]  # Получаем векторы слов
+    return np.mean(vectors, axis=0) if vectors else np.zeros(100)  # Усредняем векторы
 
-X_train_w2v = np.array([text_to_vector(text) for text in X_train_clean])
-X_test_w2v = np.array([text_to_vector(text) for text in X_test_clean])
+X_train_w2v = np.array([text_to_vector(text) for text in X_train_clean])  # Преобразуем обучающие тексты в векторы
+X_test_w2v = np.array([text_to_vector(text) for text in X_test_clean])  # Преобразуем тестовые тексты в векторы
 
-model_w2v_clf = LogisticRegression(max_iter=1000)
-model_w2v_clf.fit(X_train_w2v, y_train)
-results["Word2Vec"] = accuracy_score(y_test, model_w2v_clf.predict(X_test_w2v))
+model_w2v_clf = LogisticRegression(max_iter=1000)  # Создаём модель логистической регрессии
+model_w2v_clf.fit(X_train_w2v, y_train)  # Обучаем модель на обучающих данных
+results["Word2Vec"] = accuracy_score(y_test, model_w2v_clf.predict(X_test_w2v))  # Оцениваем точность на тестовых данных
 
 # 7. Вывод результатов
 print("\nРезультаты классификации:")
