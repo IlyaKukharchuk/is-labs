@@ -57,6 +57,40 @@ model.compile(optimizer='adam', loss='mean_squared_error')
 # 20% данных используются для проверки во время обучения
 history = model.fit(X_train, y_train, epochs=100, batch_size=32, validation_split=0.2, verbose=1)
 
+# Сохранение обученной модели
+model.save('fish_weight_model.h5')
+
+# Функция для ввода данных и предсказания веса
+def predict_fish_weight(input_data):
+    # Преобразование входных данных в DataFrame
+    input_df = pd.DataFrame([input_data], columns=X.columns)
+
+    # Масштабирование входных данных
+    input_scaled = scaler.transform(input_df)
+
+    # Предсказание веса
+    predicted_weight = model.predict(input_scaled)
+    return predicted_weight[0][0]
+
+# Пример использования функции
+input_data = {
+    'Length1': 23.2,
+    'Length2': 25.4,
+    'Length3': 30.1,
+    'Height': 11.52,
+    'Width': 4.02,
+    'Species_Bream': 1,
+    'Species_Parkki': 0,
+    'Species_Perch': 0,
+    'Species_Pike': 0,
+    'Species_Roach': 0,
+    'Species_Smelt': 0,
+    'Species_Whitefish': 0
+}
+
+predicted_weight = predict_fish_weight(input_data)
+print(f'Предсказанный вес рыбы: {predicted_weight}')
+
 # 4. Визуализация результатов обучения
 # Построение графика потерь для обучающей и проверочной выборок
 plt.plot(history.history['loss'], label='Train Loss')
